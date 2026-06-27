@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cebraspe Boost — Sistema de Decodificação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06090F;--surface:#0D1220;--border:#1C2540;
+  --gold:#E8B84B;--gold-light:#F5D07A;--gold-dim:rgba(232,184,75,0.12);
+  --blue:#1A3EFF;--text:#EAEEFF;--muted:#6B7A99;
+  --heading:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+
+.gold{color:var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow-pulse{0%,100%{box-shadow:0 0 30px var(--gold),0 0 60px rgba(232,184,75,.3)}50%{box-shadow:0 0 50px var(--gold),0 0 100px rgba(232,184,75,.5)}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.fade-up{animation:fadeUp .7s ease both}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}
+
+/* TOPBAR */
+.topbar{background:rgba(232,184,75,.08);border-bottom:1px solid rgba(232,184,75,.2);text-align:center;padding:10px 20px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--gold-light);position:relative;z-index:10}
+.topbar span{opacity:.7;margin:0 8px}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px 80px;overflow:hidden;text-align:center}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(26,62,255,.18) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 80%,rgba(232,184,75,.08) 0%,transparent 60%);pointer-events:none}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(26,62,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(26,62,255,.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;mask-image:radial-gradient(ellipse 80% 80% at center,black 0%,transparent 70%)}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid rgba(232,184,75,.35);border-radius:100px;padding:6px 18px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:28px}
+.badge::before{content:'⚡';font-size:14px}
+.hero h1{font-family:var(--heading);font-size:clamp(48px,9vw,100px);line-height:.95;letter-spacing:.02em;text-transform:uppercase;margin-bottom:12px;max-width:860px}
+.line-gold{display:block;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 50%,var(--gold) 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite}
+.line-white{display:block;color:var(--text)}
+.hero-tagline{font-family:var(--body);font-size:clamp(18px,3vw,26px);font-weight:500;color:var(--text);margin-bottom:0}
+.hero-sub{font-size:clamp(15px,2.2vw,19px);color:var(--muted);max-width:600px;margin:20px auto 0;line-height:1.7}
+.hero-sub strong{color:var(--text);font-weight:600}
+
+/* TICKER */
+.ticker-wrap{overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 0;background:rgba(26,62,255,.04);position:relative;z-index:2}
+.ticker-track{display:flex;width:max-content;animation:ticker 28s linear infinite;gap:60px}
+.ticker-item{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;letter-spacing:.03em}
+.ticker-item .dot{color:var(--gold);font-size:18px}
+
+/* SECTION COMMONS */
+section{position:relative;z-index:1}
+.container{max-width:1020px;margin:0 auto;padding:0 24px}
+.section-label{display:inline-block;font-family:var(--heading);font-size:13px;letter-spacing:.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px}
+h2{font-family:var(--heading);font-size:clamp(34px,5.5vw,62px);line-height:1;letter-spacing:.02em;text-transform:uppercase;margin-bottom:16px}
+.section-sub{font-size:16px;color:var(--muted);line-height:1.6;margin-bottom:40px}
+
+/* MECANISM SECTION */
+.mecanism{padding:90px 0}
+.mecanism-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;margin-top:50px}
+.mecanism-left h3{font-family:var(--heading);font-size:28px;letter-spacing:.04em;margin-bottom:8px;color:var(--text)}
+.mecanism-left p{font-size:15px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+.mec-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.mec-list li{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500;color:var(--text)}
+.mec-list li::before{content:'→';color:var(--gold);font-weight:700;flex-shrink:0}
+
+/* PROVAS COLUMN */
+.provas-title{font-family:var(--heading);font-size:20px;letter-spacing:.06em;color:var(--gold);margin-bottom:16px;text-transform:uppercase}
+.provas-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prova-tag{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--muted);transition:border-color .2s,color .2s;text-align:center}
+.prova-tag:hover{border-color:rgba(232,184,75,.3);color:var(--gold)}
+
+/* APP MOCK */
+.app-mock{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:0;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 40px rgba(26,62,255,.12);animation:float 4s ease-in-out infinite}
+.mock-top{background:linear-gradient(135deg,#0D1525,#06090F);padding:18px 18px 0;border-bottom:1px solid var(--border)}
+.mock-tabs{display:flex;gap:6px;margin-bottom:14px}
+.mock-tab{font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:.2s}
+.mock-tab.active{background:var(--gold-dim);border-color:rgba(232,184,75,.4);color:var(--gold)}
+.mock-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mock-title{font-family:var(--heading);font-size:18px;letter-spacing:.04em;color:var(--gold)}
+.mock-score-big{text-align:center;padding:10px 0 14px}
+.mock-pct{font-family:var(--heading);font-size:56px;line-height:1;color:var(--gold)}
+.mock-pct-label{font-size:11px;color:var(--muted);margin-top:2px}
+.mock-evo{display:flex;justify-content:space-between;align-items:center;background:rgba(26,62,255,.08);border:1px solid rgba(26,62,255,.2);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.mock-evo-num{font-family:var(--heading);font-size:28px;color:var(--gold-light)}
+.mock-evo-label{font-size:11px;color:var(--muted)}
+.progress-block{margin-bottom:9px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.progress-bar{height:5px;background:var(--border);border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--blue),var(--gold))}
+.mock-dots{display:flex;gap:5px;justify-content:center;padding:10px 0 12px}
+.mock-dot{width:7px;height:7px;border-radius:50%;background:var(--border)}
+.mock-dot.active{background:var(--gold)}
+
+.mock-questao{padding:16px 18px 18px;background:var(--bg)}
+.mock-q-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mock-q-num{font-size:12px;color:var(--muted);font-weight:600}
+.mock-timer{display:flex;align-items:center;gap:5px;font-family:var(--heading);font-size:18px;letter-spacing:.08em;color:var(--gold)}
+.mock-timer-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);animation:blink 1s ease-in-out infinite}
+.mock-q-text{font-size:12.5px;color:var(--text);line-height:1.6;margin-bottom:14px;border-left:2px solid rgba(232,184,75,.3);padding-left:12px}
+.mock-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mock-btn{padding:10px;border-radius:8px;font-family:var(--heading);font-size:16px;letter-spacing:.1em;text-align:center;border:1px solid;cursor:pointer;transition:.2s}
+.mock-btn-c{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:#22c55e}
+.mock-btn-c:hover{background:rgba(34,197,94,.18)}
+.mock-btn-e{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#ef4444}
+.mock-btn-e:hover{background:rgba(239,68,68,.18)}
+
+/* TREINO PADRAO */
+.padrao{padding:90px 0}
+.padrao-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-top:50px}
+.padrao-right h3{font-family:var(--heading);font-size:26px;letter-spacing:.04em;margin-bottom:10px}
+.padrao-right p{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.padrao-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.padrao-list li{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;color:var(--text)}
+.padrao-list li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0}
+
+/* MOCK QUESTAO GRANDE */
+.big-mock{background:var(--surface);border:1px solid rgba(232,184,75,.15);border-radius:20px;padding:24px;box-shadow:0 30px 60px rgba(0,0,0,.4)}
+.bm-badge{display:inline-block;background:var(--gold-dim);border:1px solid rgba(232,184,75,.3);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold);margin-bottom:14px}
+.bm-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.bm-q{font-size:11px;color:var(--muted);font-weight:700}
+.bm-timer{font-family:var(--heading);font-size:20px;color:var(--gold)}
+.bm-text{font-size:13px;color:var(--text);line-height:1.65;margin-bottom:16px;padding:14px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid var(--border)}
+.bm-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.bm-btn{padding:12px;border-radius:10px;font-family:var(--heading);font-size:18px;letter-spacing:.1em;text-align:center;border:1px solid;cursor:pointer;transition:.2s}
+.bm-c{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:#22c55e}
+.bm-e{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:#ef4444}
+.bm-tags{display:flex;flex-wrap:wrap;gap:6px}
+.bm-tag{background:var(--border);border-radius:100px;padding:3px 10px;font-size:11px;color:var(--muted)}
+
+/* O QUE MUDA */
+.muda{padding:90px 0;background:radial-gradient(ellipse 80% 50% at 50% 0,rgba(26,62,255,.07) 0%,transparent 70%);border-top:1px solid var(--border)}
+.muda-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:50px}
+.muda-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .3s,transform .3s}
+.muda-card:hover{border-color:rgba(232,184,75,.3);transform:translateY(-4px)}
+.muda-icon{font-size:28px;margin-bottom:12px}
+.muda-card h3{font-family:var(--heading);font-size:22px;letter-spacing:.04em;margin-bottom:6px;color:var(--text)}
+.muda-card p{font-size:13.5px;color:var(--muted);line-height:1.5}
+
+/* PAIN */
+.pain{padding:80px 0}
+.pain-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
+.pain-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .3s,transform .3s}
+.pain-card:hover{border-color:rgba(232,184,75,.3);transform:translateY(-4px)}
+.pain-icon{font-size:28px;margin-bottom:12px}
+.pain-card h3{font-family:var(--heading);font-size:20px;letter-spacing:.03em;margin-bottom:6px}
+.pain-card p{font-size:13.5px;color:var(--muted);line-height:1.5}
+
+/* NUMBERS */
+.numbers{padding:70px 0;background:linear-gradient(135deg,rgba(26,62,255,.06) 0%,rgba(232,184,75,.04) 100%);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.num-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;text-align:center}
+.num-item{padding:20px;border-right:1px solid var(--border)}
+.num-item:last-child{border-right:none}
+.num-val{font-family:var(--heading);font-size:clamp(40px,5vw,64px);line-height:1;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.num-label{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+/* FEATURES */
+.features{padding:80px 0}
+.feat-list{margin-top:50px;display:grid;gap:0}
+.feat-item{display:grid;grid-template-columns:64px 1fr;gap:24px;align-items:start;padding:28px 0;border-bottom:1px solid var(--border);transition:background .3s;border-radius:8px}
+.feat-item:hover{background:rgba(232,184,75,.03)}
+.feat-num{font-family:var(--heading);font-size:48px;color:var(--border);line-height:1;transition:color .3s}
+.feat-item:hover .feat-num{color:rgba(232,184,75,.3)}
+.feat-title{font-family:var(--heading);font-size:26px;letter-spacing:.03em;margin-bottom:6px}
+.feat-desc{font-size:14px;color:var(--muted);line-height:1.6}
+.feat-tag{display:inline-block;background:var(--gold-dim);border:1px solid rgba(232,184,75,.2);border-radius:100px;padding:2px 12px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--gold);margin-top:8px;text-transform:uppercase}
+
+/* PROOF */
+.proof{padding:80px 0}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.proof-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .3s,transform .3s}
+.proof-card:hover{border-color:rgba(232,184,75,.25);transform:translateY(-4px)}
+.stars{color:var(--gold);font-size:14px;letter-spacing:2px;margin-bottom:12px}
+.proof-text{font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px;font-style:italic}
+.proof-author{display:flex;align-items:center;gap:10px}
+.proof-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--bg)}
+.proof-name{font-size:13px;font-weight:700}
+.proof-role{font-size:11px;color:var(--muted)}
+
+/* OFFER */
+.offer{padding:100px 0;text-align:center}
+.offer-box{max-width:560px;margin:40px auto 0;background:var(--surface);border:1px solid rgba(232,184,75,.2);border-radius:24px;padding:40px 32px;box-shadow:0 0 60px rgba(232,184,75,.06),0 40px 80px rgba(0,0,0,.4);position:relative;overflow:hidden}
+.offer-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.offer-badge{background:var(--gold);color:var(--bg);font-family:var(--heading);font-size:13px;letter-spacing:.12em;padding:4px 16px;border-radius:100px;display:inline-block;margin-bottom:20px}
+.price-old{font-size:18px;color:var(--muted);text-decoration:line-through;margin-bottom:4px}
+.price-main{font-family:var(--heading);font-size:72px;line-height:1;color:var(--gold);margin-bottom:4px}
+.price-note{font-size:14px;color:var(--muted);margin-bottom:28px}
+.offer-list{list-style:none;text-align:left;margin-bottom:32px}
+.offer-list li{display:flex;align-items:flex-start;gap:12px;font-size:15px;padding:10px 0;border-bottom:1px solid var(--border);color:var(--text)}
+.offer-list li:last-child{border-bottom:none}
+.offer-list .chk{color:var(--gold);font-size:18px;flex-shrink:0;margin-top:1px}
+.cta-btn{display:block;width:100%;background:linear-gradient(135deg,var(--gold) 0%,var(--gold-light) 50%,var(--gold) 100%);background-size:200% auto;color:var(--bg);font-family:var(--heading);font-size:22px;letter-spacing:.08em;text-decoration:none;padding:18px 32px;border-radius:12px;transition:background-position .5s,transform .2s,box-shadow .3s;animation:glow-pulse 3s ease-in-out infinite;text-align:center;cursor:pointer;border:none}
+.cta-btn:hover{background-position:right center;transform:translateY(-2px) scale(1.01)}
+.security-note{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:12px;color:var(--muted)}
+
+/* GUARANTEE */
+.guarantee{padding:70px 0;text-align:center}
+.guarantee-card{max-width:500px;margin:0 auto;border:2px solid rgba(232,184,75,.25);border-radius:20px;padding:36px;background:rgba(232,184,75,.03)}
+.guarantee-icon{font-size:56px;margin-bottom:16px}
+.guarantee-card h3{font-family:var(--heading);font-size:32px;letter-spacing:.04em;margin-bottom:10px;color:var(--gold)}
+.guarantee-card p{font-size:15px;color:var(--muted);line-height:1.6}
+
+/* FAQ */
+.faq{padding:80px 0}
+.faq-list{max-width:660px;margin:40px auto 0}
+.faq-item{border-bottom:1px solid var(--border);overflow:hidden}
+.faq-q{display:flex;justify-content:space-between;align-items:center;padding:20px 0;cursor:pointer;font-size:15px;font-weight:600;color:var(--text);gap:16px;transition:color .3s}
+.faq-q:hover{color:var(--gold)}
+.faq-icon{color:var(--gold);font-size:20px;flex-shrink:0;transition:transform .3s}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-size:14px;color:var(--muted);line-height:1.7}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:18px}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+
+footer{padding:32px 24px;text-align:center;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--gold)}
+
+@media(max-width:768px){
+  .mecanism-grid,.padrao-grid{grid-template-columns:1fr}
+  .pain-grid{grid-template-columns:1fr}
+  .proof-grid{grid-template-columns:1fr}
+  .muda-grid{grid-template-columns:1fr}
+  .num-grid{grid-template-columns:1fr 1fr}
+  .provas-grid{grid-template-columns:1fr 1fr}
+  .feat-item{grid-template-columns:48px 1fr;gap:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  🔥 Oferta por tempo limitado <span>•</span> Vagas encerrando hoje <span>•</span> Mais de 4.200 aprovados
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="badge fade-up">Sistema de Decodificação <span class="gold">CEBRASPE</span></div>
+
+  <h1 class="fade-up d2">
+    <span class="line-white">Existe um Padrão Secreto</span>
+    <span class="line-gold">em Toda Questão</span>
+    <span class="line-white">da <span style="-webkit-text-fill-color:initial;color:var(--gold)">CEBRASPE.</span></span>
+  </h1>
+  <p class="hero-tagline fade-up d3">Aprenda Cada Um — Direto no Celular.</p>
+
+  <p class="hero-sub fade-up d3">
+    O Sistema de Decodificação <strong class="gold">CEBRASPE</strong> mapeia toda lógica, armadilha e enunciado da banca em simulados práticos. Você treina onde estiver, <strong>gabarito em segundos</strong> — e para de errar o que já sabe.
+  </p>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track">
+    <div class="ticker-item"><span class="dot">★</span> Aprovado no INSS 2025</div>
+    <div class="ticker-item"><span class="dot">★</span> Passou na PF após 2 meses</div>
+    <div class="ticker-item"><span class="dot">★</span> Concursado no TCE-RJ</div>
+    <div class="ticker-item"><span class="dot">★</span> Aprovada na Receita Federal</div>
+    <div class="ticker-item"><span class="dot">★</span> Nomeado no TRT-MG</div>
+    <div class="ticker-item"><span class="dot">★</span> 1º lugar no COREN-SP</div>
+    <div class="ticker-item"><span class="dot">★</span> Passou no Banco do Brasil</div>
+    <div class="ticker-item"><span class="dot">★</span> Aprovado no INSS 2025</div>
+    <div class="ticker-item"><span class="dot">★</span> Passou na PF após 2 meses</div>
+    <div class="ticker-item"><span class="dot">★</span> Concursado no TCE-RJ</div>
+    <div class="ticker-item"><span class="dot">★</span> Aprovada na Receita Federal</div>
+    <div class="ticker-item"><span class="dot">★</span> Nomeado no TRT-MG</div>
+  </div>
+</div>
+
+<!-- MECANISM -->
+<section class="mecanism">
+  <div class="container">
+    <span class="section-label">O Mecanismo</span>
+    <h2>Um app para treinar<br>do jeito certo</h2>
+    <p class="section-sub">Questões no padrão da banca, simulados reais e diagnóstico claro dos seus erros.</p>
+
+    <div class="mecanism-grid">
+      <div class="mecanism-left">
+        <ul class="mec-list">
+          <li>Questões no estilo <strong class="gold">CEBRASPE</strong></li>
+          <li>Simulados com tempo real</li>
+          <li>Análise dos seus erros</li>
+          <li>Visão clara do seu nível</li>
+        </ul>
+
+        <div class="provas-title">Funciona para todos os concursos <span class="gold">CEBRASPE</span></div>
+        <div class="provas-grid">
+          <div class="prova-tag">INSS</div>
+          <div class="prova-tag">Polícia Federal</div>
+          <div class="prova-tag">PRF</div>
+          <div class="prova-tag">Receita Federal</div>
+          <div class="prova-tag">Câmara Federal</div>
+          <div class="prova-tag">Senado Federal</div>
+          <div class="prova-tag">TCU</div>
+          <div class="prova-tag">AGU</div>
+          <div class="prova-tag">CGU</div>
+          <div class="prova-tag">STJ</div>
+        </div>
+      </div>
+
+      <!-- APP MOCK -->
+      <div class="app-mock">
+        <div class="mock-top">
+          <div class="mock-header">
+            <div class="mock-title">⚡ MEU DESEMPENHO</div>
+          </div>
+          <div class="mock-score-big">
+            <div class="mock-pct">92%</div>
+            <div class="mock-pct-label">acertos no último simulado</div>
+          </div>
+          <div class="mock-evo">
+            <div>
+              <div class="mock-evo-num">+28%</div>
+              <div class="mock-evo-label">Evolução — últimos 30 dias</div>
+            </div>
+            <div style="font-size:28px">📈</div>
+          </div>
+          <div class="mock-tabs">
+            <div class="mock-tab active">Simulados</div>
+            <div class="mock-tab">Questões</div>
+            <div class="mock-tab">Histórico</div>
+          </div>
+          <div class="progress-block">
+            <div class="progress-label"><span>Direito Constitucional</span><span>92%</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:92%"></div></div>
+          </div>
+          <div class="progress-block">
+            <div class="progress-label"><span>Português</span><span>88%</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:88%"></div></div>
+          </div>
+          <div class="progress-block">
+            <div class="progress-label"><span>Raciocínio Lógico</span><span>85%</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+          </div>
+          <div class="mock-dots">
+            <div class="mock-dot active"></div>
+            <div class="mock-dot active"></div>
+            <div class="mock-dot active"></div>
+            <div class="mock-dot active"></div>
+          </div>
+        </div>
+
+        <div class="mock-questao">
+          <div class="mock-q-header">
+            <div class="mock-q-num">Questão 47 / 120</div>
+            <div class="mock-timer"><div class="mock-timer-dot"></div> 02:45</div>
+          </div>
+          <div class="mock-q-text">
+            Segundo a Constituição Federal, é vedado à União, aos Estados, ao Distrito Federal e aos Municípios instituir tributos sobre patrimônio, renda ou serviços, uns dos outros.
+          </div>
+          <div class="mock-btns">
+            <div class="mock-btn mock-btn-c">CERTO</div>
+            <div class="mock-btn mock-btn-e">ERRADO</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TREINO NO PADRÃO REAL -->
+<section class="padrao" style="border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="padrao-grid">
+      <!-- MOCK GRANDE -->
+      <div class="big-mock">
+        <div class="bm-badge">TREINO NO PADRÃO REAL</div>
+        <div class="bm-header">
+          <div class="bm-q">Questão 12 / 60</div>
+          <div class="bm-timer">01:23</div>
+        </div>
+        <div class="bm-text">
+          Segundo a Constituição Federal, é vedado à União, aos Estados, ao Distrito Federal e aos Municípios instituir tributos sobre patrimônio, renda ou serviços, uns dos outros.
+        </div>
+        <div class="bm-btns">
+          <div class="bm-btn bm-c">CERTO</div>
+          <div class="bm-btn bm-e">ERRADO</div>
+        </div>
+        <div class="bm-tags">
+          <div class="bm-tag">Dir. Tributário</div>
+          <div class="bm-tag">Imunidade recíproca</div>
+          <div class="bm-tag">Art. 150 CF</div>
+        </div>
+      </div>
+
+      <!-- TEXTO -->
+      <div class="padrao-right">
+        <span class="section-label">Treino no Padrão Real</span>
+        <h3>Igual à prova,<br>sem surpresas no dia</h3>
+        <p>Cada questão segue a estrutura, o tempo e a lógica de pegadinha da <strong class="gold">CEBRASPE</strong>. Você deixa de ser surpreendido e começa a antecipar a banca.</p>
+        <ul class="padrao-list">
+          <li>Formato CERTO / ERRADO</li>
+          <li>Tempo cronometrado por questão</li>
+          <li>Feedback imediato com explicação</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- O QUE MUDA -->
+<section class="muda">
+  <div class="container">
+    <span class="section-label">O que muda</span>
+    <h2>O que você ganha<br>treinando todo dia</h2>
+    <div class="muda-grid">
+      <div class="muda-card">
+        <div class="muda-icon">🎯</div>
+        <h3>Mais Acertos</h3>
+        <p>Saia da faixa dos 60–70 e construa consistência rumo aos 90+ acertos.</p>
+      </div>
+      <div class="muda-card">
+        <div class="muda-icon">⚡</div>
+        <h3>Velocidade Real</h3>
+        <p>Responda mais rápido sem perder precisão — fundamental no dia da prova.</p>
+      </div>
+      <div class="muda-card">
+        <div class="muda-icon">📊</div>
+        <h3>Diagnóstico Claro</h3>
+        <p>Saiba exatamente onde está errando e o que precisa revisar agora.</p>
+      </div>
+      <div class="muda-card">
+        <div class="muda-icon">🔍</div>
+        <h3>Padrão da Banca</h3>
+        <p>Treino com questões na lógica e estrutura exata da <strong class="gold">CEBRASPE</strong>.</p>
+      </div>
+      <div class="muda-card">
+        <div class="muda-icon">💪</div>
+        <h3>Confiança</h3>
+        <p>Chegue na prova sabendo que já enfrentou esse formato centenas de vezes.</p>
+      </div>
+      <div class="muda-card">
+        <div class="muda-icon">📱</div>
+        <h3>Pouco Tempo, Alto Impacto</h3>
+        <p>Blocos curtos que cabem na sua rotina, sem depender de horas livres.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="pain" style="border-top:1px solid var(--border)">
+  <div class="container">
+    <span class="section-label">O Problema</span>
+    <h2>Por que a maioria<br>não passa?</h2>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-icon">📚</div>
+        <h3>Estudou o conteúdo. Errou o enunciado.</h3>
+        <p>A <strong class="gold">CEBRASPE</strong> não testa só o que você sabe — testa como você lê. Quem não treina no padrão da banca trava na hora H.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">🎯</div>
+        <h3>Treinou na banca errada.</h3>
+        <p>Apps genéricos misturam FCC, VUNESP e <strong class="gold">CEBRASPE</strong>. A lógica de cada banca é diferente. Treinar misturado é desperdiçar tempo.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">😰</div>
+        <h3>Caiu na mesma pegadinha.</h3>
+        <p>A <strong class="gold">CEBRASPE</strong> repete armadilhas. Quem não aprende a reconhecer o padrão continua caindo — até na prova real.</p>
+      </div>
+      <div class="pain-card">
+        <div class="pain-icon">📉</div>
+        <h3>Errou sem entender por quê.</h3>
+        <p>Sem gabarito explicado, o erro se repete. Você não precisa de mais questões. Precisa entender o raciocínio por trás delas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NUMBERS -->
+<div class="numbers">
+  <div class="container">
+    <div class="num-grid">
+      <div class="num-item">
+        <div class="num-val">4.2K+</div>
+        <div class="num-label">alunos aprovados com o método</div>
+      </div>
+      <div class="num-item">
+        <div class="num-val">3.800+</div>
+        <div class="num-label">questões exclusivas <span class="gold">CEBRASPE</span></div>
+      </div>
+      <div class="num-item">
+        <div class="num-val">94%</div>
+        <div class="num-label">de acertos após 30 dias de treino</div>
+      </div>
+      <div class="num-item">
+        <div class="num-val">7 dias</div>
+        <div class="num-label">de garantia total sem perguntas</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div style="max-width:560px">
+      <span class="section-label">O Método</span>
+      <h2>Como o Sistema de<br>Decodificação <span class="gold">CEBRASPE</span><br>funciona</h2>
+    </div>
+    <div class="feat-list">
+      <div class="feat-item">
+        <div class="feat-num">01</div>
+        <div>
+          <div class="feat-title">Questões no estilo <span class="gold">CEBRASPE</span> puro</div>
+          <p class="feat-desc">Banco com mais de 3.800 questões no formato exato da banca — enunciado, armadilha, pegadinha e tudo. Sem mistura com outras bancas.</p>
+          <span class="feat-tag">⚡ Exclusivo</span>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-num">02</div>
+        <div>
+          <div class="feat-title">Diagnóstico de ponto fraco</div>
+          <p class="feat-desc">O sistema identifica automaticamente onde você está errando mais e monta um treino personalizado para eliminar as lacunas antes da prova.</p>
+          <span class="feat-tag">🎯 Inteligente</span>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-num">03</div>
+        <div>
+          <div class="feat-title">Simulados cronometrados</div>
+          <p class="feat-desc">Treine a pressão do tempo. Simulados com cronômetro e controle de ritmo para você chegar ao dia da prova confortável e veloz.</p>
+          <span class="feat-tag">⏱️ Imersivo</span>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-num">04</div>
+        <div>
+          <div class="feat-title">Gabarito comentado em vídeo</div>
+          <p class="feat-desc">Cada questão tem explicação detalhada de por que cada opção está certa ou errada — você aprende o raciocínio da banca, não só a resposta.</p>
+          <span class="feat-tag">🎥 Didático</span>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-num">05</div>
+        <div>
+          <div class="feat-title">Acesso vitalício — pague só uma vez</div>
+          <p class="feat-desc">R$47,90 uma única vez. Sem mensalidade, sem renovação. Use quantas vezes quiser, em quantos concursos precisar.</p>
+          <span class="feat-tag">💰 Pagamento único</span>
+        </div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-num">06</div>
+        <div>
+          <div class="feat-title">100% no celular — treine qualquer hora, em qualquer lugar</div>
+          <p class="feat-desc">Acesso completo pelo celular. Gabarito em segundos. 10 minutos no ônibus ou na fila já são treino real. Sem depender de mesa, computador ou horário fixo.</p>
+          <span class="feat-tag">📱 Mobile first</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section class="proof" style="background:radial-gradient(ellipse 80% 40% at 50% 100%,rgba(26,62,255,.06) 0%,transparent 70%);border-top:1px solid var(--border)">
+  <div class="container">
+    <span class="section-label">Resultados reais</span>
+    <h2>Quem usou,<br>passou.</h2>
+    <div class="proof-grid">
+      <div class="proof-card">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"Eu tentei 3 vezes sem o Boost. Na 4ª tentativa, com 40 dias de treino aqui, passei na PF com a 2ª maior nota do estado."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">LF</div>
+          <div><div class="proof-name">Lucas F.</div><div class="proof-role">Aprovado — Polícia Federal</div></div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"O diferencial é o jeito que explica o raciocínio da <strong class="gold">CEBRASPE</strong>. Aprendi a pensar como a banca pensa. Não erro mais as pegadinhas."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">AM</div>
+          <div><div class="proof-name">Ana M.</div><div class="proof-role">Aprovada — Receita Federal</div></div>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="stars">★★★★★</div>
+        <p class="proof-text">"Melhor investimento da minha vida. R$47,90 por uma aprovação que vai mudar minha carreira. Valeu cada centavo e muito mais."</p>
+        <div class="proof-author">
+          <div class="proof-avatar">RC</div>
+          <div><div class="proof-name">Rodrigo C.</div><div class="proof-role">Aprovado — TCE-RJ</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFER -->
+<section class="offer" id="oferta">
+  <div class="container">
+    <span class="section-label">Oferta</span>
+    <h2>Sua aprovação<br>por R$47,90</h2>
+    <div class="offer-box">
+      <div class="offer-badge">ACESSO COMPLETO</div>
+      <p class="price-old">De R$197,00</p>
+      <div class="price-main">R$47,90</div>
+      <p class="price-note">Pagamento único — acesso vitalício</p>
+      <ul class="offer-list">
+        <li><span class="chk">✓</span> 3.800+ questões estilo <strong class="gold">CEBRASPE</strong></li>
+        <li><span class="chk">✓</span> Diagnóstico inteligente de pontos fracos</li>
+        <li><span class="chk">✓</span> Simulados cronometrados com ranking</li>
+        <li><span class="chk">✓</span> Gabarito comentado em vídeo</li>
+        <li><span class="chk">✓</span> Plano de estudos personalizado</li>
+        <li><span class="chk">✓</span> 100% no celular — treine onde quiser</li>
+        <li><span class="chk">✓</span> Atualizações gratuitas para sempre</li>
+      </ul>
+      <a href="#" class="cta-btn">🚀 QUERO DECODIFICAR A CEBRASPE — R$47,90</a>
+      <div class="security-note">🔒 Pagamento seguro via Pix, cartão ou boleto</div>
+    </div>
+  </div>
+</section>
+
+<!-- GUARANTEE -->
+<section class="guarantee">
+  <div class="container">
+    <div class="guarantee-card">
+      <div class="guarantee-icon">🛡️</div>
+      <h3>Garantia Total de 7 Dias</h3>
+      <p>Se por qualquer motivo você não gostar do Sistema de Decodificação <strong class="gold">CEBRASPE</strong>, basta nos enviar uma mensagem em até 7 dias após a compra e devolvemos 100% do valor — sem perguntas, sem burocracia.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="container" style="text-align:center">
+    <span class="section-label">Dúvidas</span>
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Para qual concurso serve? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Todos os concursos com banca <strong>CEBRASPE</strong> (antiga Cespe/UnB): INSS, PF, PRF, Receita Federal, TCU, TRF, TRT, bancos públicos, e muitos outros. Veja a lista completa acima.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Como acesso depois da compra? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Imediatamente após confirmar o pagamento, você recebe o acesso por e-mail. Funciona no celular, tablet e computador — sem app adicional necessário.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">É assinatura ou pagamento único? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Pagamento único de R$47,90. Sem mensalidade, sem renovação. Paga uma vez e tem acesso para sempre, incluindo atualizações futuras.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Em quanto tempo vejo resultado? <span class="faq-icon">+</span></div>
+        <div class="faq-a">A maioria dos alunos já percebe melhora significativa no aproveitamento dos simulados em 2 a 3 semanas de uso consistente.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">E se eu não gostar? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Garantia de 7 dias sem questionamento. Basta entrar em contato e devolvemos 100% do valor pago. Sem burocracia.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section style="padding:80px 24px;text-align:center;background:linear-gradient(135deg,rgba(26,62,255,.06) 0%,rgba(232,184,75,.04) 100%);border-top:1px solid var(--border)">
+  <h2 style="font-size:clamp(32px,6vw,60px);margin-bottom:16px">Você está a um passo<br>da sua aprovação</h2>
+  <p style="color:var(--muted);max-width:460px;margin:0 auto 32px;font-size:16px">Não deixe mais um concurso passar. Por R$47,90 você tem tudo que precisa para garantir sua vaga.</p>
+  <a href="#oferta" class="cta-btn" style="max-width:480px;display:inline-block;width:100%">⚡ QUERO DECODIFICAR A CEBRASPE — R$47,90</a>
+  <p style="margin-top:12px;font-size:13px;color:var(--muted)">🔒 Compra 100% segura · Acesso imediato · Garantia de 7 dias</p>
+</section>
+
+<footer>
+  <p>© 2025 Cebraspe Boost — Todos os direitos reservados</p>
+  <p style="margin-top:8px">
+    <a href="#">Política de Privacidade</a> &nbsp;·&nbsp;
+    <a href="#">Termos de Uso</a> &nbsp;·&nbsp;
+    <a href="#">Suporte</a>
+  </p>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item=q.parentElement,wasOpen=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+    if(!wasOpen)item.classList.add('open');
+  });
+});
+
+const observer=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)'}
+  });
+},{threshold:.1});
+document.querySelectorAll('.pain-card,.feat-item,.proof-card,.num-item,.muda-card,.prova-tag').forEach(el=>{
+  el.style.opacity='0';el.style.transform='translateY(20px)';
+  el.style.transition='opacity .6s ease,transform .6s ease';
+  observer.observe(el);
+});
+
+document.querySelectorAll('.mock-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.mock-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
